@@ -8,17 +8,16 @@ import Connections from "./pages/Connections";
 import Discover from "./pages/Discover";
 import Profile from "./pages/Profile";
 import CreatePost from "./pages/CreatePost";
-import {useUser} from "@clerk/clerk-react"
-import { Layout } from "lucide-react";
-
+import Layout from "./pages/Layout";
+import { useUser } from "@clerk/clerk-react";
 
 const App = () => {
-  const {user} = useUser()
+  const { user } = useUser();
 
   return (
     <>
       <Routes>
-        <Route path="/" element={!user ? <Login />: <Layout/>}>
+        <Route path="/" element={!user ? <Login /> : <Layout />}>
           <Route index element={<Feed />} />
           <Route path="messags" element={<Messages />} />
           <Route path="messags/:userId" element={<ChatBox />} />
