@@ -6,13 +6,12 @@ import { dummyUserData } from "../assets/assets";
 import Loading from "../components/Loading";
 
 const Layout = () => {
-
-  const user = dummyUserData
+  const user = dummyUserData;
   const [sidebarOpen, setSiderbarOpen] = useState(false);
 
-  return user?(
+  return user ? (
     <div className="w-full flex h-screen">
-      <Sidebar />
+      <Sidebar sidebarOpen={sidebarOpen} setSiderbarOpen={setSiderbarOpen} />
       <div className="flex-1 bd-slate-50">
         <Outlet />
       </div>
@@ -28,8 +27,8 @@ const Layout = () => {
         />
       )}
     </div>
-  ): (
-    <Loading/>
+  ) : (
+    <Loading />
   );
 };
 
