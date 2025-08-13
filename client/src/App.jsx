@@ -21,7 +21,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={!user ? <Login /> : <Layout />}>
           <Route index element={<Feed />} />
-          <Route path="messags" element={<Messages />} />
+          <Route path="messages" element={<Messages />} />
           <Route path="messags/:userId" element={<ChatBox />} />
           <Route path="connections" element={<Connections />} />
           <Route path="discover" element={<Discover />} />

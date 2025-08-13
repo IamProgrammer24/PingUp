@@ -18,7 +18,7 @@ const RecentMessages = () => {
       <h3 className="font-semibole text-slate-8 mb-4">Recent Messages</h3>
       <div className="flex flex-col max-h-56 overflow-y-scroll no-scrollbar">
         {messages.map((message, index) => (
-          <Link
+          <Link to={`/messages/${message.from_user_id._id}`}
             className="flex items-start gap-2 py-2 hover:bg-slate-100"
             key={index}
           >
