@@ -1,9 +1,11 @@
 import { Inngest } from "inngest";
+import User from "../models/User.js";
 
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "pingup-app" });
 
 // Inngest Function to save user data to database
+
 const syncUserCreation = inngest.createFunction(
   { id: "sync-user-from-clerk" },
   { event: "clerk/user.created" },
@@ -25,6 +27,8 @@ const syncUserCreation = inngest.createFunction(
       profile_picture: image_url,
       username,
     };
+    console.log("📥 Clerk user.created event received:", event.data);
+    console.log("👉 Creating user with data:", userData);
 
     await User.create(userData);
   }
