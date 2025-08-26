@@ -39,18 +39,27 @@ const syncUserCreation = inngest.createFunction(
   { event: "clerk/user.created" },
   async ({ event }) => {
     try {
-      const { id, first_name, last_name, email_addresses, image_url } = event;
-      let username = email_addresses[0].email_address.split("@")[0];
+      const { id, first_name, last_name, email_addresses, image_url } =
+        event.data;
 
+      // ✅ Safely get the first email address
+      const email =
+        email_addresses?.[0]?.email_address || "no-email@example.com";
+
+      // ✅ Generate a base username
+      let username = email.split("@")[0];
+
+      // ✅ Check for username conflict
       const existingUser = await User.findOne({ username });
       if (existingUser) {
-        username = username + Math.floor(Math.random() * 10000);
+        username += Math.floor(Math.random() * 10000);
       }
 
+      // ✅ Build user data safely
       const userData = {
         _id: id,
-        email: email_addresses[0].email_address,
-        full_name: `${first_name} ${last_name}`,
+        email,
+        full_name: `${first_name ?? ""} ${last_name ?? ""}`.trim(),
         profile_picture: image_url,
         username,
       };
