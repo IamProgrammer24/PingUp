@@ -1,9 +1,9 @@
 import express from "express";
-import { serve } from "inngest/express";
 import cors from "cors";
 import "dotenv/config";
+import { serve } from "inngest/express";
 import connectDB from "./configs/db.js";
-import { inngest } from "./inngestClient.js";
+import { inngest, functions } from "./inngest/index.js";
 
 const app = express();
 
@@ -16,19 +16,8 @@ app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
-app.post("/api/inngest", async (req, res) => {
-  const body = req.body;
+app.use("/api/inngest", serve({ client: inngest, functions }));
 
-  console.log("📩 Received Clerk webhook:", body);
-
-  // Forward event to Inngest with correct shape
-  await inngest.send({
-    name: body.name, // e.g. "clerk/user.created"
-    data: body.data, // actual user data ONLY
-  });
-
-  res.status(200).send("OK");
-});
 
 const PORT = process.env.PORT || 4000;
 
