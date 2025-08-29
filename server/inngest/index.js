@@ -2,6 +2,8 @@ import { Inngest } from "inngest";
 import User from "../models/User.js";
 import Connection from "../models/connection.js";
 import sendEmail from "../configs/nodeMailer.js";
+import Story from "../models/story.js";
+import Message from "../models/message.js";
 
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "pingup-app" });
@@ -75,19 +77,22 @@ const sendNewConnectionRequestReminder = inngest.createFunction(
   async ({ event, step }) => {
     const { connectionId } = event.data;
 
+    // Step 1: Send initial connection request email
     await step.run("send-connection-request-main", async () => {
       const connection = await Connection.findById(connectionId).populate(
         "from_user_id to_user_id"
       );
+      if (!connection) throw new Error("Connection not found");
+
       const subject = `New Connection Request`;
-      const body = `<div style="font-family: Arial, sans-serif; padding: 20px;>
-      <h2>Hi${connection.to_user_id.full_name},</h2>
-      <p>You have a new connection request from ${connection.from_user_id.full_name} - @${connection.from_user_id.username}</p>
-      <p>Click <a href="${process.env.FRONTEND_URL}/connections" style="color:
-      #10b981;">here</a> to accept or reject the request</P>
-      <br/>
-      <p>Thanks,<br/>PingUp-stay Connected</P
-      </div>`;
+      const body = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>Hi ${connection.to_user_id.full_name},</h2>
+          <p>You have a new connection request from ${connection.from_user_id.full_name} - @${connection.from_user_id.username}</p>
+          <p>Click <a href="${process.env.FRONTEND_URL}/connections" style="color: #10b981;">here</a> to accept or reject the request.</p>
+          <br/>
+          <p>Thanks,<br/>PingUp - Stay Connected</p>
+        </div>`;
 
       await sendEmail({
         to: connection.to_user_id.email,
@@ -95,24 +100,31 @@ const sendNewConnectionRequestReminder = inngest.createFunction(
         body,
       });
     });
-    const in24Hours = new Date(Date.now() + 24*60*60*1000)
-    await step.sleepUntil('wait-for-24-hours', in24Hours);
-    await step.run('send-connection-request-reminder', async()=>{
-      const connection = await Connection.findById(connectionId).populate('from_user_id to_user_id');
 
-      if(connection.status === 'accepted'){
-        return {message: "Already accepted"}
+    // Step 2: Wait 24 hours
+    const in24Hours = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await step.sleepUntil("wait-for-24-hours", in24Hours);
+
+    // Step 3: Send reminder if not accepted
+    await step.run("send-connection-request-reminder", async () => {
+      const connection = await Connection.findById(connectionId).populate(
+        "from_user_id to_user_id"
+      );
+      if (!connection) throw new Error("Connection not found");
+
+      if (connection.status === "accepted") {
+        return { message: "Already accepted" };
       }
 
-      const subject = `New Connection Request`;
-      const body = `<div style="font-family: Arial, sans-serif; padding: 20px;>
-      <h2>Hi${connection.to_user_id.full_name},</h2>
-      <p>You have a new connection request from ${connection.from_user_id.full_name} - @${connection.from_user_id.username}</p>
-      <p>Click <a href="${process.env.FRONTEND_URL}/connections" style="color:
-      #10b981;">here</a> to accept or reject the request</P>
-      <br/>
-      <p>Thanks,<br/>PingUp-stay Connected</P
-      </div>`;
+      const subject = `Reminder: New Connection Request`;
+      const body = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>Hi ${connection.to_user_id.full_name},</h2>
+          <p>This is a reminder that you have a new connection request from ${connection.from_user_id.full_name} - @${connection.from_user_id.username}</p>
+          <p>Click <a href="${process.env.FRONTEND_URL}/connections" style="color: #10b981;">here</a> to accept or reject the request.</p>
+          <br/>
+          <p>Thanks,<br/>PingUp - Stay Connected</p>
+        </div>`;
 
       await sendEmail({
         to: connection.to_user_id.email,
@@ -120,13 +132,70 @@ const sendNewConnectionRequestReminder = inngest.createFunction(
         body,
       });
 
-      return {message: "Reminder sent"}
-
-
-    })
+      return { message: "Reminder sent" };
+    });
   }
 );
 
+// Delete story after 24 hours
+const deleteStory = inngest.createFunction(
+  { id: "story-delete" },
+  { event: "app/story.delete" },
+  async ({ event, step }) => {
+    const { storyId } = event.data; // ✅ FIXED: `event.Date` → `event.data`
+
+    await step.run("delete-story", async () => {
+      await Story.findByIdAndDelete(storyId);
+      return { message: "Story deleted." };
+    });
+  }
+);
+
+const sendNotificationofUnseenMessages = inngest.createFunction(
+  { id: "send-unseen-messages-notification" },
+  { cron: "TZ=America/New_York 0 9 * * *" }, // Every day at 9 AM EST
+  async ({ step }) => {
+    // Find all unseen messages and populate recipient user data
+    const messages = await Message.find({ seen: false }).populate("to_user_id");
+    const unseenCount = {};
+
+    // Count unseen messages per user
+    messages.forEach((message) => {
+      const userId = message.to_user_id._id.toString();
+      unseenCount[userId] = (unseenCount[userId] || 0) + 1;
+    });
+
+    for (const userId in unseenCount) {
+      const user = await User.findById(userId);
+
+      const subject = `You have ${unseenCount[userId]} unseen messages`;
+
+      const body = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>Hi ${user.full_name},</h2>
+          <p>Click <a href="${process.env.FRONTEND_URL}/messages" style="color: #10b981;">here</a> to view your messages.</p>
+          <br/>
+          <p>Thanks,<br/>PingUp - Stay Connected</p>
+        </div>
+      `;
+
+      await sendEmail({
+        to: user.email,
+        subject,
+        body,
+      });
+    }
+
+    return { message: "Notifications sent." };
+  }
+);
 
 // Create an empty array where we'll export future Inngest functions
-export const functions = [syncUserCreation, syncUserUpdation, syncUserDeletion, sendNewConnectionRequestReminder];
+export const functions = [
+  syncUserCreation,
+  syncUserUpdation,
+  syncUserDeletion,
+  sendNewConnectionRequestReminder,
+  deleteStory,
+  sendNotificationofUnseenMessages,
+];

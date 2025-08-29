@@ -1,5 +1,7 @@
 import imagekit from "../configs/imageKit.js";
+import { inngest } from "../inngest/index.js";
 import Connection from "../models/connection.js";
+import Post from "../models/post.js";
 import User from "../models/User.js";
 import fs from "fs";
 
@@ -284,9 +286,14 @@ export const sendConnectionRequest = async (req, res) => {
     });
 
     if (!existingConnection) {
-      await Connection.create({
+      const newConnection = await Connection.create({
         from_user_id: userId,
         to_user_id: id,
+      });
+
+      await inngest.send({
+        name: "app/connection-request",
+        data: { connectionId: newConnection._id },
       });
 
       return res.status(201).json({
@@ -361,7 +368,6 @@ export const getUserConnection = async (req, res) => {
   }
 };
 
-
 //Accept Connection Request
 export const acceptConnectionRequest = async (req, res) => {
   try {
@@ -405,7 +411,6 @@ export const acceptConnectionRequest = async (req, res) => {
       success: true,
       message: "Connection request accepted successfully",
     });
-
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -415,3 +420,37 @@ export const acceptConnectionRequest = async (req, res) => {
   }
 };
 
+// Get User Profiles
+export const getUserProfile = async (req, res) => {
+  try {
+    const { profileId } = req.body;
+
+    if (!profileId) {
+      return res.status(400).json({
+        success: false,
+        message: "Profile ID is required",
+      });
+    }
+
+    const profile = await User.findById(profileId);
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: "Profile not found",
+      });
+    }
+
+    const posts = await Post.find({ user: profileId }).populate("user");
+
+    res.json({
+      success: true,
+      profile,
+      posts,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
