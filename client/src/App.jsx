@@ -1,5 +1,5 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { React, useRef } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Login from "./pages/Login";
 import Feed from "./pages/Feed";
 import Messages from "./pages/Messages";
@@ -10,18 +10,73 @@ import Profile from "./pages/Profile";
 import CreatePost from "./pages/CreatePost";
 import Layout from "./pages/Layout";
 import { useUser, useAuth } from "@clerk/clerk-react";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { fetchUser } from "./features/user/userSlice";
+import { fetchConnections } from "./features/connections/connectionSlice";
+import { addMessage } from "./features/messages/messagesSlice";
+import Notification from "./components/Notification";
+import Testpage from "./pages/Testpage";
 
 const App = () => {
   const { user } = useUser();
+  const dispatch = useDispatch();
   const { getToken } = useAuth();
+  const { pathname } = useLocation();
+  const pathnameref = useRef(pathname);
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        const token = await getToken();
+        console.log("Token:", token);
+      } catch (error) {
+        console.error("Error getting token:", error);
+      }
+    };
+
+    fetchToken();
+  }, [getToken]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (user) {
+        const token = await getToken();
+        dispatch(fetchUser(token));
+        dispatch(fetchConnections(token));
+      }
+    };
+    fetchData();
+  }, [user, getToken]);
+
+  useEffect(() => {
+    pathnameref.current = pathname;
+  }, [pathname]);
 
   useEffect(() => {
     if (user) {
-      getToken().then((token) => console.log(token));
+      const eventSource = new EventSource(
+        import.meta.env.VITE_BASEURL + "/api/message/" + user.id
+      );
+      // const("event Source", eventSoure)
+
+      eventSource.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+
+        if (pathnameref.current === "/messages/" + message.from_user_id._id) {
+          dispatch(addMessage(message));
+        } else {
+          toast.custom((t) => <Notification t={t} message={message} />, {
+            position: "bottom-right",
+          });
+        }
+      };
+      return () => {
+        eventSource.close();
+      };
     }
-  }, [user]);
+  });
 
   return (
     <>

@@ -6,6 +6,32 @@ import Message from "../models/message.js";
 const connections = {};
 
 // Controller function for the SSE endpoint
+
+// export const sseController = (req, res) => {
+//   const { userId } = req.params;
+//   console.log("New client connected:", userId);
+
+//   // Set SSE headers
+//   res.setHeader("Content-Type", "text/event-stream");
+//   res.setHeader("Cache-Control", "no-cache");
+//   res.setHeader("Connection", "keep-alive");
+//   res.setHeader("Access-Control-Allow-Origin", "*");
+
+//   // Add the client's response object to the connections object
+//   connections[userId] = res;
+
+//   // Send an initial event to the client
+//   res.write(`event: log\ndata: Connected to SSE stream\n\n`);
+
+//   // Handle client disconnection
+//   req.on("close", () => {
+//     delete connections[userId];
+//     console.log("Client disconnected:", userId);
+//   });
+// };
+
+// send Message
+
 export const sseController = (req, res) => {
   const { userId } = req.params;
   console.log("New client connected:", userId);
@@ -16,20 +42,26 @@ export const sseController = (req, res) => {
   res.setHeader("Connection", "keep-alive");
   res.setHeader("Access-Control-Allow-Origin", "*");
 
+  res.flushHeaders(); // ✅ <--- This is critical
+
   // Add the client's response object to the connections object
   connections[userId] = res;
 
   // Send an initial event to the client
   res.write(`event: log\ndata: Connected to SSE stream\n\n`);
 
+  // Optional: keep connection alive
+  const heartbeat = setInterval(() => {
+    res.write("event: ping\ndata: keep-alive\n\n");
+  }, 25000);
+
   // Handle client disconnection
   req.on("close", () => {
+    clearInterval(heartbeat);
     delete connections[userId];
     console.log("Client disconnected:", userId);
   });
 };
-
-// send Message
 
 export const sendMessage = async (req, res) => {
   try {

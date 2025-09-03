@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const storySchema = new mongoose.Schema(
+const sterySchema = new mongoose.Schema(
   {
     user: {
       type: String, // 🔒 Keeping as String (per your request)
@@ -33,5 +33,5 @@ const storySchema = new mongoose.Schema(
   }
 );
 
-const Story = mongoose.model("Story", storySchema); // ✅ Corrected model name
-export default Story;
+const Stery = mongoose.model("Stery", sterySchema);
+export default Stery;

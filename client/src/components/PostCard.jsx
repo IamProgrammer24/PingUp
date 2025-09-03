@@ -3,10 +3,13 @@ import moment from "moment";
 import React, { useState } from "react";
 import { dummyUserData } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { useAuth } from "@clerk/clerk-react";
+import api from "../api/axios";
+import toast from "react-hot-toast";
 
 const PostCard = ({ post }) => {
-
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const postwithHashtags = post.content.replace(
     /(#\w+)/g,
@@ -14,15 +17,43 @@ const PostCard = ({ post }) => {
   );
 
   const [likes, setLikes] = useState(post.likes_count);
-  const currentUser = dummyUserData;
+  const currentUser = useSelector((state) => state.user.value);
 
-  const handleLike = async () => {};
+  const { getToken } = useAuth();
+
+  const handleLike = async () => {
+    try {
+      const { data } = await api.post(
+        `/api/post/like`,
+        { postId: post._id },
+        { headers: { Authorization: `Bearer ${await getToken()}` } }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+
+        setLikes((prev) => {
+          if (prev.includes(currentUser._id)) {
+            return prev.filter((id) => id !== currentUser._id); // ✅ fixed filter condition
+          } else {
+            return [...prev, currentUser._id];
+          }
+        });
+      } else {
+        toast(data.message); // ✅ changed to toast.error for consistency, optional
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl shadow p-4 space-y-4 w-full max-w-2xl">
       {/* User Info  */}
-      <div className="inline-flex items-center gap-3 cursor-pointer"
-      onClick={()=>navigate('/profile/' + post.user._id)}>
+      <div
+        className="inline-flex items-center gap-3 cursor-pointer"
+        onClick={() => navigate("/profile/" + post.user._id)}
+      >
         <img
           className="w-10 h-10 rounded-full shadow"
           src={post.user.profile_picture}
@@ -66,25 +97,17 @@ const PostCard = ({ post }) => {
             className={`w-4 h-4 cursor-pointer ${
               likes.includes(currentUser._id) && "text-red-500 fill-red-500"
             }`}
-            onClick={() => handleLike}
+            onClick={() => handleLike()}
           ></Heart>
           <span>{likes.length}</span>
         </div>
         <div className="flex items-center gap-1">
-          <MessageCircle
-            className={`w-4 h-4 cursor-pointer ${
-              likes.includes(currentUser._id) && "text-red-500 fill-red-500"
-            }`}
-          ></MessageCircle>
+          <MessageCircle className={"w-4 h-4 cursor-pointer"}></MessageCircle>
           <span>{12}</span>
         </div>
 
         <div className="flex items-center gap-1">
-          <Share2
-            className={`w-4 h-4 cursor-pointer ${
-              likes.includes(currentUser._id) && "text-red-500 fill-red-500"
-            }`}
-          ></Share2>
+          <Share2 className={"w-4 h-4 cursor-pointer"}></Share2>
           <span>{7}</span>
         </div>
       </div>

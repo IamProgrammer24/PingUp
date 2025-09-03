@@ -1,10 +1,18 @@
 import React, { useState, useRef } from "react";
 import { dummyUserData } from "../assets/assets";
 import { Pencil } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { updatehUser } from "../features/user/userSlice";
+import { useAuth } from "@clerk/clerk-react";
+import toast from "react-hot-toast";
 
 const ProfileModal = ({ setShowEdit }) => {
-  const user = dummyUserData;
+  const dispatch = useDispatch();
+  const { getToken } = useAuth();
+
+  const user = useSelector((state) => state.user.value);
   const fileInputRef = useRef(null); // 👈 Create a ref for the hidden input
+  const profileInputRef = useRef(null);
 
   const [editForm, setEditForm] = useState({
     username: user.username,
@@ -17,11 +25,37 @@ const ProfileModal = ({ setShowEdit }) => {
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
-    // Add your save logic here
+
+    try {
+      const userData = new FormData();
+      const {
+        full_name,
+        username,
+        bio,
+        location,
+        profile_picture,
+        cover_photo,
+      } = editForm;
+
+      userData.append("username", username);
+      userData.append("bio", bio);
+      userData.append("location", location);
+      userData.append("full_name", full_name);
+      if (profile_picture) userData.append("profile", profile_picture);
+      if (cover_photo) userData.append("cover", cover_photo);
+
+      const token = await getToken();
+
+      dispatch(updatehUser({ userData, token }));
+      setShowEdit(false);
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast.error("Failed to save profile. Please try again.");
+    }
   };
 
   const handleProfileImageClick = () => {
-    fileInputRef.current.click(); // 👈 Trigger file input on image click
+    profileInputRef.current.click();
   };
 
   return (
@@ -32,20 +66,24 @@ const ProfileModal = ({ setShowEdit }) => {
             Edit Profile
           </h1>
 
-          <form className="space-y-4" onSubmit={handleSaveProfile}>
+          <form
+            className="space-y-4"
+            onSubmit={(e) =>
+              toast.promise(handleSaveProfile(e), { loading: "Saving..." })
+            }
+          >
             {/* Profile Picture */}
             <div className="flex flex-col items-start gap-3">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Profile Picture
               </label>
 
-              {/* Hidden input */}
               <input
                 type="file"
                 accept="image/*"
                 id="profile_picture"
                 hidden
-                ref={fileInputRef}
+                ref={profileInputRef}
                 onChange={(e) =>
                   setEditForm({
                     ...editForm,
@@ -54,7 +92,6 @@ const ProfileModal = ({ setShowEdit }) => {
                 }
               />
 
-              {/* Clickable image */}
               <div
                 onClick={handleProfileImageClick}
                 className="group/profile relative w-24 h-24 mt-2 cursor-pointer"
@@ -80,7 +117,6 @@ const ProfileModal = ({ setShowEdit }) => {
                 Cover Photo
               </label>
 
-              {/* Hidden file input */}
               <input
                 type="file"
                 accept="image/*"
@@ -94,7 +130,6 @@ const ProfileModal = ({ setShowEdit }) => {
                 }
               />
 
-              {/* Clickable image with hover overlay */}
               <div
                 className="relative w-full h-40 mt-2 group cursor-pointer"
                 onClick={() => fileInputRef.current.click()}
@@ -114,6 +149,8 @@ const ProfileModal = ({ setShowEdit }) => {
                 </div>
               </div>
             </div>
+
+            {/* Full Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Name
@@ -129,6 +166,7 @@ const ProfileModal = ({ setShowEdit }) => {
               />
             </div>
 
+            {/* Username */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Username
@@ -144,6 +182,7 @@ const ProfileModal = ({ setShowEdit }) => {
               />
             </div>
 
+            {/* Bio */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Bio
@@ -159,6 +198,7 @@ const ProfileModal = ({ setShowEdit }) => {
               />
             </div>
 
+            {/* Location */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Location
@@ -174,6 +214,7 @@ const ProfileModal = ({ setShowEdit }) => {
               />
             </div>
 
+            {/* Buttons */}
             <div className="flex justify-end space-x-3 pt-6">
               <button
                 className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
@@ -185,8 +226,7 @@ const ProfileModal = ({ setShowEdit }) => {
 
               <button
                 type="submit"
-                className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg
-               hover:from-indigo-600 hover:to-purple-700 transition cursor-pointer"
+                className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition cursor-pointer"
               >
                 Save Changes
               </button>

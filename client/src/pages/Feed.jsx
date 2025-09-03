@@ -4,14 +4,36 @@ import Loading from "../components/Loading";
 import StoriesBar from "../components/StoriesBar";
 import PostCard from "../components/PostCard";
 import RecentMessages from "../components/RecentMessages";
+import { useAuth } from "@clerk/clerk-react";
+import api from "../api/axios";
+import { data } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const Feed = () => {
   const [feeds, setfeeds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { getToken } = useAuth();
 
   const fetchfeeds = async () => {
-    setfeeds(dummyPostsData);
-    setLoading(false);
+    try {
+      setLoading(true);
+
+      const token = await getToken(); // Get token first for clarity
+      const { data } = await api.get("/api/post/feed", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (data.success) {
+        setfeeds(data.posts);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to fetch feeds");
+    } finally {
+      setLoading(false); // Always run this regardless of success or failure
+    }
   };
 
   useEffect(() => {
@@ -27,7 +49,7 @@ const Feed = () => {
           <StoriesBar />
         </div>
         <div className="p-4 space-y-6">
-          {feeds.map((post) => (
+          {feeds?.map((post) => (
             <PostCard key={post._id} post={post} />
           ))}
         </div>
@@ -37,11 +59,18 @@ const Feed = () => {
       <div className="max-hl:hidden sticky top-0">
         <div className="max-w-xs bg-white text-xs p-4 rounded-md inline-flex flex-col gap-2 shadow">
           <h3 className="text-slate-800 font-semibold">Sponsered</h3>
-          <img className="w-75 h-50 roundedmd" src={assets.sponsored_img} alt="" />
+          <img
+            className="w-75 h-50 roundedmd"
+            src={assets.sponsored_img}
+            alt=""
+          />
           <p className="text-slate-600">Email marketing</p>
-          <p className="text-slate-400">Supercharge your marketing with a powerful, easy-to-use plateform built for results.</p>
+          <p className="text-slate-400">
+            Supercharge your marketing with a powerful, easy-to-use plateform
+            built for results.
+          </p>
         </div>
-        <RecentMessages/>
+        <RecentMessages />
       </div>
     </div>
   ) : (

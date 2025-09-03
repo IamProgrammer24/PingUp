@@ -9,6 +9,8 @@ import fs from "fs";
 export const getUserData = async (req, res) => {
   try {
     const { userId } = await req.auth();
+    
+
     const user = await User.findById(userId);
 
     if (!user) {
@@ -424,7 +426,6 @@ export const acceptConnectionRequest = async (req, res) => {
 export const getUserProfile = async (req, res) => {
   try {
     const { profileId } = req.body;
-
     if (!profileId) {
       return res.status(400).json({
         success: false,
