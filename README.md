@@ -1,8 +1,8 @@
 # PingUp – Social Media App
 
 <p align="center">
-  <img src="src/assets/cover.png" alt="Image 1" width="45%" />
-  <img src="src/assets/homeScreen.png" alt="Image 2" width="45%" />
+  <img src="client/src/assets/cover.png" alt="Image 1" width="45%" />
+  <img src="client/src/assets/homeScreen.png" alt="Image 2" width="45%" />
 </p>
 
 ## 📝 Project Description
