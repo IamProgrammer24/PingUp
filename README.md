@@ -5,8 +5,6 @@
   <img src="src/assets/homeScreen.png" alt="Image 2" width="45%" />
 </p>
 
----
-
 ## 📝 Project Description
 
 **PingUp** is a modern social media platform built to connect users through posts, likes, comments, and real-time interactions. Designed with a sleek interface and responsive design, PingUp allows users to share their thoughts, follow others, and stay updated in a secure and engaging environment.
