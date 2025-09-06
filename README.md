@@ -15,7 +15,7 @@
 
 Check out the live version of PingUp here:
 
-🔗 [View Live Site](https://your-pingup-live-link.com)
+🔗 [View Live Site](https://ping-up-ten.vercel.app)
 
 ---
 
