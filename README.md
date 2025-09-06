@@ -117,57 +117,57 @@ Before running the application locally, make sure to configure environment varia
 CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 ```
 
-```bash
+```env
 CLERK_SECRET_KEY=your_clerk_secret_key
 ```
 
-```bash
+```env
 IMAGE_PUBLIC_KEY=your_imagekit_public_key
 ```
 
-```bash
+```env
 IMAGE_PRIVATE_KEY=your_imagekit_private_key
 ```
 
-```bash
+```env
 IMAGE_URL_ENDPOINT=your_imagekit_url
 ```
 
-```bash
+```env
 SENDER_EMAIL=mail@gmail.com
 ```
 
-```bash
+```env
 SMTP_USER=your_brevo_user_id
 ```
 
-```bash
+```env
 SMTP_PASS=your_brevo_user_pass
 ```
 
-```bash
+```env
 MONGODB_URI=mongodb://localhost:27017/pingup_db
 ```
 
-```bash
+```env
 INNGEST_EVENT_KEY=your_inngest_event_key
 ```
 
-```bash
+```env
 INNGEST_SIGNING_KEY=your_inngest_signing_key
 ```
 
-```bash
+```env
 FRONTEND_URL=http://localhost:5173
 ```
 
 ### 📁 client (`/client/.env`)
 
-```bash
+```env
 VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 ```
 
-```bash
+```env
 VITE_BASEURL=http://localhost:4000
 ```
 
